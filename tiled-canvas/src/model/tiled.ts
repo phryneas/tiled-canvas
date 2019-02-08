@@ -46,4 +46,11 @@ export interface TsxJson {
     tileheight: number;
     tilewidth: number;
     type: string;
+    tiles?: TilesObject;
+}
+
+interface TilesObject {
+    [id: string]: {
+        animation: Array<{ duration: number; tileid: number }>;
+    };
 }
