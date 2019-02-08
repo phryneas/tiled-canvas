@@ -1,5 +1,8 @@
-/dist/
-/node_modules/
-/.rts2_cache_cjs/
-/.rts2_cache_es/
-/.rts2_cache_umd/
+.vscode/
+dist/
+node_modules/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+.cache/
+yarn-error.log

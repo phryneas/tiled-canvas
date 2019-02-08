@@ -1,0 +1,26 @@
+{
+    "name": "examples",
+    "version": "0.0.1",
+    "main": "index.html",
+    "private": true,
+    "scripts": {
+        "start": "parcel ./index.html"
+    },
+    "dependencies": {
+        "tiled-canvas": "*",
+        "parcel-plugin-static-files-copy": "^2.0.0"
+    },
+    "devDependencies": {
+        "parcel": "^1.11.0"
+    },
+    "staticFiles": {
+        "staticPath": [
+            "public"
+        ]
+    },
+    "workspaces": {
+        "nohoist": [
+            "**"
+        ]
+    }
+}
