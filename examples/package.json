@@ -7,11 +7,13 @@
         "start": "parcel ./index.html"
     },
     "dependencies": {
-        "tiled-canvas": "*",
-        "parcel-plugin-static-files-copy": "^2.0.0"
+        "@types/pako": "^1.0.0",
+        "pako": "^1.0.8",
+        "tiled-canvas": "*"
     },
     "devDependencies": {
-        "parcel": "^1.11.0"
+        "parcel": "^1.11.0",
+        "parcel-plugin-static-files-copy": "^2.0.0"
     },
     "staticFiles": {
         "staticPath": [

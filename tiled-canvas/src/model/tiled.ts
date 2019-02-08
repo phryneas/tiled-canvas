@@ -9,6 +9,8 @@ export interface Layer {
     x: number;
     y: number;
     layers?: Array<Layer>;
+    encoding?: 'csv' | 'base64';
+    compression?: 'zlib' | 'gzip';
 }
 
 export interface Tileset {

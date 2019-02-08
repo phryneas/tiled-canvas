@@ -3,6 +3,21 @@
     <title>Examples</title>
 </head>
 <body>
-    <canvas id="example-canvas-1" height="752" width="928"></canvas>
-    <script src="./src/example1.ts"></script>
+    <h1>Examples</h1>
+    <section>
+        <h2>Example 1: display .tmx file</h2>
+        <canvas id="example-canvas-1" height="752" width="928"></canvas>
+        <script src="./src/example1.ts"></script>
+        <script>
+            example1(document.getElementById('example-canvas-1'));
+        </script>
+    </section>
+    <section>
+        <h2>Example 2: using zlib-encoded .tmx file</h2>
+        <canvas id="example-canvas-2" height="752" width="928"></canvas>
+        <script src="./src/example2.ts"></script>
+        <script>
+            example2(document.getElementById('example-canvas-2'));
+        </script>
+    </section>
 </body>

@@ -1,20 +1,27 @@
 import { loadMap, drawCanvasLayer } from 'tiled-canvas';
 
-const baseDir = `${window.location.origin}${window.location.pathname}`.replace(/^(.*?)(\/[^/]*\.[^/]*)?$/, '$1');
-
-const canvas1 = document.getElementById('example-canvas-1') as HTMLCanvasElement;
-const context = canvas1.getContext('2d');
-if (!context) {
-    throw new Error('could not get context');
+declare global {
+    interface Window {
+        example1(canvas: HTMLCanvasElement): void;
+    }
 }
 
-loadMap('island.tmx.json', `${baseDir}/rpg/`).then(basicConfig => {
-    for (const layer of basicConfig.tmxJson.layers) {
-        const layerConfig = {
-            ...basicConfig,
-            context,
-            layer
-        };
-        drawCanvasLayer(layerConfig);
+const baseDir = `${window.location.origin}${window.location.pathname}`.replace(/^(.*?)(\/[^/]*\.[^/]*)?$/, '$1');
+
+window.example1 = canvas => {
+    const context = canvas.getContext('2d');
+    if (!context) {
+        throw new Error('could not get context');
     }
-});
+
+    loadMap('island.tmx.json', `${baseDir}/rpg/`).then(basicConfig => {
+        for (const layer of basicConfig.tmxJson.layers) {
+            const layerConfig = {
+                ...basicConfig,
+                context,
+                layer
+            };
+            drawCanvasLayer(layerConfig);
+        }
+    });
+};
