@@ -5,7 +5,19 @@
 <body>
     <h1>Examples</h1>
     <section>
-        <h2>Example 1: display .tmx file</h2>
+        <p>
+            These are some examples on how to use the
+            <a href="https://github.com/phryneas/tiled-canvas">'tiled-canvas'</a> library. The tileset is by
+            <a href="https://twitter.com/finalbossblues">@finalbossblues</a> and has been converted from .tmx to the
+            tiled json export format.
+        </p>
+        <p>
+            For more information,
+            <a href="https://github.com/phryneas/tiled-canvas/tree/master/examples/public/rpg">see here</a>.
+        </p>
+    </section>
+    <section>
+        <h2>Example 1: display .tmx.json file</h2>
         <canvas id="example-canvas-1" height="752" width="928"></canvas>
         <script src="./src/example1.ts"></script>
         <script>
@@ -13,7 +25,7 @@
         </script>
     </section>
     <section>
-        <h2>Example 2: using zlib-encoded .tmx file</h2>
+        <h2>Example 2: using zlib-encoded .tmx.json file</h2>
         <canvas id="example-canvas-2" height="752" width="928"></canvas>
         <script src="./src/example2.ts"></script>
         <script>
@@ -22,10 +34,18 @@
     </section>
     <section>
         <h2>Example 3: animation</h2>
-        <div id="example-div-3" height="752" width="928"></div>
+        <div id="example-div-3" style="height: 752px; width: 928px"></div>
         <script src="./src/example3.ts"></script>
         <script>
             example3(document.getElementById('example-div-3'));
+        </script>
+    </section>
+    <section>
+        <h2>Example 4: calculate collision layer out of "Fringe" layer, display it.</h2>
+        <canvas id="example-canvas-4" height="752" width="928"></canvas>
+        <script src="./src/example4.ts"></script>
+        <script>
+            example4(document.getElementById('example-canvas-4'));
         </script>
     </section>
 </body>
