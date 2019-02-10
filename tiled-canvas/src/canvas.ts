@@ -1,53 +1,36 @@
 import { TmxJson, Layer, TsxJson } from './model/tiled';
 import { isTileLayer, isGroupLayer } from './helpers';
 
-let memoizedAnimatedTiles: { [memoTime: number]: { [tileIndex: number]: number } } = {};
+import memoize from 'micro-memoize';
 
-function getAnimatedTile({
-    tsxJson: { tiles },
-    animationTime,
-    tileIndex
-}: {
-    tsxJson: TsxJson;
-    animationTime: number;
-    tileIndex: number;
-}): number {
-    const baseTileIndex = tileIndex & (0x0fffffff - 1);
-    const rotation = tileIndex & 0xf0000000;
+const getAnimatedTile = memoize(
+    (animationTime: number, { tiles }: TsxJson) =>
+        memoize(
+            (tileIndex: number) => {
+                const baseTileIndex = tileIndex & (0x0fffffff - 1);
+                const rotation = tileIndex & 0xf0000000;
 
-    if (!tiles || !tiles[baseTileIndex] || !tiles[baseTileIndex].animation) {
-        return tileIndex;
-    }
+                if (!tiles || !tiles[baseTileIndex] || !tiles[baseTileIndex].animation) {
+                    return tileIndex;
+                }
 
-    if (!memoizedAnimatedTiles[animationTime]) {
-        while (Object.keys(memoizedAnimatedTiles).length > 1) {
-            delete memoizedAnimatedTiles[(Object.keys(memoizedAnimatedTiles).sort()[0] as any) as number];
-        }
-        memoizedAnimatedTiles[animationTime] = [];
-    }
-    const memoized = memoizedAnimatedTiles[animationTime];
+                const animation = tiles[baseTileIndex].animation;
+                const animationTotal = animation.reduce((sum, item) => sum + item.duration, 0);
 
-    if (memoized[tileIndex]) {
-        return memoized[tileIndex];
-    }
-
-    const animation = tiles[baseTileIndex].animation;
-    const animationTotal = animation.reduce((sum, item) => sum + item.duration, 0);
-
-    animationTime = animationTime % animationTotal;
-    let time = 0;
-    let returnValue = tileIndex;
-    for (const frame of animation) {
-        time += frame.duration;
-        if (time >= animationTime) {
-            returnValue = (frame.tileid | rotation) + 1;
-            break;
-        }
-    }
-
-    memoized[tileIndex] = returnValue;
-    return returnValue;
-}
+                animationTime = animationTime % animationTotal;
+                let time = 0;
+                for (const frame of animation) {
+                    time += frame.duration;
+                    if (time >= animationTime) {
+                        return (frame.tileid | rotation) + 1;
+                    }
+                }
+                return tileIndex;
+            },
+            { maxSize: Number.POSITIVE_INFINITY }
+        ),
+    { maxSize: 2 } // for "last render" and "current render"
+);
 
 export interface DrawCanvasLayerArgs {
     layer: Layer;
@@ -56,25 +39,38 @@ export interface DrawCanvasLayerArgs {
     tmxJson: TmxJson;
     tsxJson: TsxJson;
     animationTime?: number;
+    /** if lastAnimationTime is set, only tiles that changed animation state between animationTime and lastAnimationTime will be drawn */
+    lastAnimationTime?: number;
 }
 
-export function drawCanvasLayer({
-    layer,
-    context,
-    tileSet,
-    tmxJson,
-    tmxJson: { width, height },
-    tsxJson,
-    animationTime = 0
-}: DrawCanvasLayerArgs) {
+export function drawCanvasLayer(args: DrawCanvasLayerArgs) {
+    const {
+        layer,
+        context,
+        tileSet,
+        tmxJson,
+        tmxJson: { width, height },
+        tsxJson,
+        animationTime = 0,
+        lastAnimationTime
+    } = args;
+
     if (isTileLayer(layer) && Array.isArray(layer.data)) {
+        const getTileIndex = getAnimatedTile(animationTime, tsxJson);
+        const getLastTileIndex = lastAnimationTime ? getAnimatedTile(lastAnimationTime, tsxJson) : getTileIndex;
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
                 const gridIndex = y * width + x;
                 if (layer.data[gridIndex] === 0) {
                     continue;
                 }
-                const tileIndex = getAnimatedTile({ tsxJson, animationTime, tileIndex: layer.data[gridIndex] });
+                const tileIndex = getTileIndex(layer.data[gridIndex]);
+                if (lastAnimationTime) {
+                    const lastTileIndex = getLastTileIndex(layer.data[gridIndex]);
+                    if (lastTileIndex === tileIndex) {
+                        continue;
+                    }
+                }
                 context.save();
                 drawCanvasTile({ x, y, tileIndex, context, tileSet, layer, tsxJson });
                 context.restore();
@@ -84,61 +80,7 @@ export function drawCanvasLayer({
     if (isGroupLayer(layer) && Array.isArray(layer.layers)) {
         for (const subLayer of layer.layers) {
             // drawing Sublayer
-            drawCanvasLayer({ layer: subLayer, context, tileSet, tmxJson, tsxJson });
-        }
-    }
-}
-
-export interface DrawAnimatedChangesArgs extends DrawCanvasLayerArgs {
-    lastAnimationTime: number;
-    animationTime: number;
-}
-
-export function drawAnimatedChanges({
-    layer,
-    context,
-    tileSet,
-    tmxJson,
-    tmxJson: { width, height },
-    tsxJson,
-    animationTime,
-    lastAnimationTime
-}: DrawAnimatedChangesArgs) {
-    if (isTileLayer(layer) && Array.isArray(layer.data)) {
-        for (let y = 0; y < height; y++) {
-            for (let x = 0; x < width; x++) {
-                const gridIndex = y * width + x;
-                if (layer.data[gridIndex] === 0) {
-                    continue;
-                }
-                const lastTileIndex = getAnimatedTile({
-                    tsxJson,
-                    animationTime: lastAnimationTime,
-                    tileIndex: layer.data[gridIndex]
-                });
-                const tileIndex = getAnimatedTile({ tsxJson, animationTime, tileIndex: layer.data[gridIndex] });
-                if (lastTileIndex === tileIndex) {
-                    continue;
-                }
-
-                context.save();
-                drawCanvasTile({ x, y, tileIndex, context, tileSet, layer, tsxJson });
-                context.restore();
-            }
-        }
-    }
-    if (isGroupLayer(layer) && Array.isArray(layer.layers)) {
-        for (const subLayer of layer.layers) {
-            // drawing Sublayer
-            drawAnimatedChanges({
-                layer: subLayer,
-                context,
-                tileSet,
-                tmxJson,
-                tsxJson,
-                animationTime,
-                lastAnimationTime
-            });
+            drawCanvasLayer({ ...args, layer: subLayer });
         }
     }
 }
@@ -165,7 +107,7 @@ function drawCanvasTile({
     const flip_horiz = 0x80000000 & tileIndex;
     const flip_vert = 0x40000000 & tileIndex;
     const flip_diag = 0x20000000 & tileIndex;
-    const realTileIndex = (tileIndex & 0x1fffffff) - 1;
+    const realTileIndex = (tileIndex & 0x0fffffff) - 1;
 
     const tileX = realTileIndex % cols;
     const tileY = Math.floor(realTileIndex / cols);

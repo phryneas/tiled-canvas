@@ -1,10 +1,4 @@
-import {
-    loadMap,
-    drawCanvasLayer,
-    DrawCanvasLayerArgs,
-    drawAnimatedChanges,
-    DrawAnimatedChangesArgs
-} from 'tiled-canvas';
+import { loadMap, drawCanvasLayer, DrawCanvasLayerArgs } from 'tiled-canvas';
 
 declare global {
     interface Window {
@@ -58,14 +52,14 @@ window.example3 = container => {
             for (const [key, layer] of basicConfig.tmxJson.layers.entries()) {
                 const context = contexts[key];
 
-                const layerConfig: DrawAnimatedChangesArgs = {
+                const layerConfig: DrawCanvasLayerArgs = {
                     ...basicConfig,
                     context,
                     layer,
                     animationTime,
                     lastAnimationTime
                 };
-                drawAnimatedChanges(layerConfig);
+                drawCanvasLayer(layerConfig);
             }
             lastAnimationTime = animationTime;
 
