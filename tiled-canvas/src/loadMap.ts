@@ -1,4 +1,5 @@
-import { TsxJson, TmxJson, Layer } from './model/tiled';
+import { TsxJson, TmxJson, Layer, TileLayer } from './model/tiled';
+import { isTileLayer } from './helpers';
 
 export interface MapData {
     tsxJson: TsxJson;
@@ -15,7 +16,7 @@ export async function loadMap(tmxJsonFilename: string, base: string, options: Ex
     const tmxJsonResult = await fetch(new URL(tmxJsonFilename, base).toString());
     const tmxJson = (await tmxJsonResult.json()) as TmxJson;
 
-    tmxJson.layers = tmxJson.layers.map(normalizeLayer(options));
+    tmxJson.layers = tmxJson.layers.map(layer => (isTileLayer(layer) ? normalizeLayer(options)(layer) : layer));
 
     const tsxJsonResult = await fetch(new URL(tmxJson.tilesets[0].source, base).toString());
     const tsxJson = (await tsxJsonResult.json()) as TsxJson;
@@ -28,22 +29,28 @@ export async function loadMap(tmxJsonFilename: string, base: string, options: Ex
     return { tmxJson, tsxJson, tileSet };
 }
 
-const normalizeLayer = (options: ExtraOptions) => (layer: Layer): Layer => {
-    if (layer.encoding === 'base64' && layer.compression === 'zlib') {
-        if (!options.decompressZlib) {
-            throw new Error('encountered zlib compressed data, but no decompressZlib option was given!');
+const normalizeLayer = (options: ExtraOptions) => (layer: TileLayer): TileLayer => {
+    const normalizeWithDecompressionFn = (decompressionFn?: (_: string) => number[]) => {
+        if (!decompressionFn) {
+            throw new Error('encountered compressed data, but no correct decompression function was given!');
         }
-        layer.data = options.decompressZlib((layer.data as any) as string);
+        if (layer.data) {
+            layer.data = decompressionFn((layer.data as any) as string);
+        }
+        if (layer.chunks) {
+            layer.chunks.forEach(chunk => {
+                if (typeof chunk.data === 'string') chunk.data = decompressionFn(chunk.data);
+            });
+        }
         layer.encoding = 'csv';
         delete layer.compression;
+    };
+
+    if (layer.encoding === 'base64' && layer.compression === 'zlib') {
+        normalizeWithDecompressionFn(options.decompressZlib);
     }
     if (layer.encoding === 'base64' && layer.compression === 'gzip') {
-        if (!options.decompressGzip) {
-            throw new Error('encountered zlib compressed data, but no decompressGzip option was given!');
-        }
-        layer.data = options.decompressGzip((layer.data as any) as string);
-        layer.encoding = 'csv';
-        delete layer.compression;
+        normalizeWithDecompressionFn(options.decompressGzip);
     }
     return layer;
 };

@@ -1,17 +1,59 @@
-export interface Layer {
-    data?: number[];
-    height: number;
+export interface TypedProperty<Type extends string, ValueType> {
     name: string;
-    opacity: number;
-    type: string;
+    type: Type;
+    value: ValueType;
+}
+
+export type Property = TypedProperty<'int', number> | TypedProperty<'string', string>;
+
+export interface BaseLayer {
+    height: number;
+    id?: number;
+    name: string;
+    offsetx?: number;
+    offsety?: number;
+    opacity?: number;
+    properties?: Array<Property>;
     visible: boolean;
     width: number;
     x: number;
     y: number;
-    layers?: Array<Layer>;
+}
+
+export interface ImageLayer extends BaseLayer {
+    type: 'imagelayer';
+    image: string;
+    transparentcolor?: string;
+}
+
+export interface GroupLayer extends BaseLayer {
+    type: 'group';
+    layers: Array<Layer>;
+}
+
+export interface ObjectLayer extends BaseLayer {
+    type: 'objectgroup';
+    draworder: 'topdown' | 'index';
+    object: unknown[];
+}
+
+export interface TileLayer extends BaseLayer {
+    type: 'tilelayer';
+    chunks?: Chunk[];
+    data?: number[];
     encoding?: 'csv' | 'base64';
     compression?: 'zlib' | 'gzip';
 }
+
+export interface Chunk {
+    data: number[];
+    height: number;
+    width: number;
+    x: number;
+    y: number;
+}
+
+export type Layer = TileLayer | ObjectLayer | GroupLayer | ImageLayer;
 
 export interface Tileset {
     firstgid: number;

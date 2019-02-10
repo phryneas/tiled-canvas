@@ -1,4 +1,5 @@
-import { Layer, TmxJson } from './model/tiled';
+import { TmxJson, TileLayer, GroupLayer } from './model/tiled';
+import { isTileLayer, isGroupLayer } from './helpers';
 
 interface Rectangle {
     x: number;
@@ -7,7 +8,7 @@ interface Rectangle {
     height: number;
 }
 
-export function layerToRectangles(layer: Layer, { tilewidth, tileheight }: TmxJson): Rectangle[] {
+export function tileLayerToRectangles(layer: TileLayer | GroupLayer, { tilewidth, tileheight }: TmxJson): Rectangle[] {
     const rectMap: Array<Array<Rectangle>> = [];
     const getRect = (x: number, y: number): Rectangle | undefined => (rectMap[y] || [])[x];
     const setRect = (x: number, y: number, rect: Rectangle) => {
@@ -17,8 +18,8 @@ export function layerToRectangles(layer: Layer, { tilewidth, tileheight }: TmxJs
         rectMap[y][x] = rect;
     };
 
-    const accumulateLayer = (layer: Layer) => {
-        if (layer.data) {
+    const accumulateLayer = (layer: TileLayer | GroupLayer) => {
+        if (isTileLayer(layer) && layer.data) {
             for (let dy = 0; dy < layer.height; dy++) {
                 for (let dx = 0; dx < layer.width; dx++) {
                     const x = layer.x + dx;
@@ -62,8 +63,12 @@ export function layerToRectangles(layer: Layer, { tilewidth, tileheight }: TmxJs
             }
         }
 
-        for (const subLayer of layer.layers || []) {
-            acc.push(...accumulateLayer(subLayer));
+        if (isGroupLayer(layer)) {
+            for (const subLayer of layer.layers) {
+                if (isTileLayer(subLayer) || isGroupLayer(subLayer)) {
+                    acc.push(...accumulateLayer(subLayer));
+                }
+            }
         }
 
         return acc;
