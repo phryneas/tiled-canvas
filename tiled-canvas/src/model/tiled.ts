@@ -1,3 +1,5 @@
+import { GeometryObject } from './tiled-geometry-objects';
+
 export interface TypedProperty<Type extends string, ValueType> {
     name: string;
     type: Type;
@@ -34,7 +36,7 @@ export interface GroupLayer extends BaseLayer {
 export interface ObjectLayer extends BaseLayer {
     type: 'objectgroup';
     draworder: 'topdown' | 'index';
-    object: unknown[];
+    objects: Array<GeometryObject>;
 }
 
 export interface TileLayer extends BaseLayer {

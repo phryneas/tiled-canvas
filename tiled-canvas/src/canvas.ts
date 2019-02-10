@@ -1,4 +1,5 @@
 import { TmxJson, Layer, TsxJson } from './model/tiled';
+import { isTileLayer, isGroupLayer } from './helpers';
 
 let memoizedAnimatedTiles: { [memoTime: number]: { [tileIndex: number]: number } } = {};
 
@@ -66,7 +67,7 @@ export function drawCanvasLayer({
     tsxJson,
     animationTime = 0
 }: DrawCanvasLayerArgs) {
-    if (layer.data) {
+    if (isTileLayer(layer) && Array.isArray(layer.data)) {
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
                 const gridIndex = y * width + x;
@@ -80,9 +81,11 @@ export function drawCanvasLayer({
             }
         }
     }
-    for (const subLayer of layer.layers || []) {
-        // drawing Sublayer
-        drawCanvasLayer({ layer: subLayer, context, tileSet, tmxJson, tsxJson });
+    if (isGroupLayer(layer) && Array.isArray(layer.layers)) {
+        for (const subLayer of layer.layers) {
+            // drawing Sublayer
+            drawCanvasLayer({ layer: subLayer, context, tileSet, tmxJson, tsxJson });
+        }
     }
 }
 
@@ -101,7 +104,7 @@ export function drawAnimatedChanges({
     animationTime,
     lastAnimationTime
 }: DrawAnimatedChangesArgs) {
-    if (layer.data) {
+    if (isTileLayer(layer) && Array.isArray(layer.data)) {
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
                 const gridIndex = y * width + x;
@@ -124,9 +127,19 @@ export function drawAnimatedChanges({
             }
         }
     }
-    for (const subLayer of layer.layers || []) {
-        // drawing Sublayer
-        drawCanvasLayer({ layer: subLayer, context, tileSet, tmxJson, tsxJson });
+    if (isGroupLayer(layer) && Array.isArray(layer.layers)) {
+        for (const subLayer of layer.layers) {
+            // drawing Sublayer
+            drawAnimatedChanges({
+                layer: subLayer,
+                context,
+                tileSet,
+                tmxJson,
+                tsxJson,
+                animationTime,
+                lastAnimationTime
+            });
+        }
     }
 }
 

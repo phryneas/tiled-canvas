@@ -1,14 +1,8 @@
-import { TmxJson, TileLayer, GroupLayer } from './model/tiled';
-import { isTileLayer, isGroupLayer } from './helpers';
+import { TmxJson, TileLayer, GroupLayer, Layer } from './model/tiled';
+import { isTileLayer, isGroupLayer, isObjectLayer, isImageLayer } from './helpers';
+import { Rectangle, GeometryObject } from './model/tiled-geometry-objects';
 
-interface Rectangle {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-}
-
-export function tileLayerToRectangles(layer: TileLayer | GroupLayer, { tilewidth, tileheight }: TmxJson): Rectangle[] {
+export function tileLayerToRectangles(layer: TileLayer, { tilewidth, tileheight }: TmxJson): Rectangle[] {
     const rectMap: Array<Array<Rectangle>> = [];
     const getRect = (x: number, y: number): Rectangle | undefined => (rectMap[y] || [])[x];
     const setRect = (x: number, y: number, rect: Rectangle) => {
@@ -18,16 +12,26 @@ export function tileLayerToRectangles(layer: TileLayer | GroupLayer, { tilewidth
         rectMap[y][x] = rect;
     };
 
-    const accumulateLayer = (layer: TileLayer | GroupLayer) => {
+    const accumulateLayer = (layer: TileLayer) => {
         if (isTileLayer(layer) && layer.data) {
             for (let dy = 0; dy < layer.height; dy++) {
                 for (let dx = 0; dx < layer.width; dx++) {
                     const x = layer.x + dx;
                     const y = layer.y + dy;
-                    const value = layer.data[dy * layer.width + dx];
+                    const idx = dy * layer.width + dx;
+                    const value = layer.data[idx];
 
                     if (value) {
-                        let rect = { x, y, width: 1, height: 1 };
+                        let rect: Rectangle = {
+                            id: (layer.id || 0) * 10000 + idx,
+                            name: '',
+                            type: '',
+                            x,
+                            y,
+                            width: 1,
+                            height: 1,
+                            visible: true
+                        };
                         const left = getRect(x - 1, y);
                         if (left && left.height === 1) {
                             // grow right
@@ -63,21 +67,33 @@ export function tileLayerToRectangles(layer: TileLayer | GroupLayer, { tilewidth
             }
         }
 
-        if (isGroupLayer(layer)) {
-            for (const subLayer of layer.layers) {
-                if (isTileLayer(subLayer) || isGroupLayer(subLayer)) {
-                    acc.push(...accumulateLayer(subLayer));
-                }
-            }
-        }
-
         return acc;
     };
 
-    return accumulateLayer(layer).map(({ x, y, width, height }) => ({
-        x: x * tilewidth,
-        y: y * tileheight,
-        width: width * tilewidth,
-        height: height * tileheight
+    return accumulateLayer(layer).map(rect => ({
+        ...rect,
+        x: rect.x * tilewidth,
+        y: rect.y * tileheight,
+        width: rect.width * tilewidth,
+        height: rect.height * tileheight
     }));
+}
+
+export function layerToGeometryObjects(layer: Layer, tmxJson: TmxJson): Array<GeometryObject> {
+    if (isTileLayer(layer)) {
+        return tileLayerToRectangles(layer, tmxJson);
+    }
+    if (isObjectLayer(layer)) {
+        return layer.objects;
+    }
+    if (isGroupLayer(layer)) {
+        return layer.layers.reduce(
+            (acc, subLayer) => (acc.push(...layerToGeometryObjects(subLayer, tmxJson)), acc),
+            [] as Array<GeometryObject>
+        );
+    }
+    if (isImageLayer(layer)) {
+        return [];
+    }
+    return [];
 }
