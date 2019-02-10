@@ -4,10 +4,12 @@
     "main": "index.html",
     "private": true,
     "scripts": {
-        "start": "parcel ./index.html"
+        "start": "parcel ./index.html",
+        "dist": "rimraf dist; parcel build ./index.html --public-url https://phryneas.github.io/tiled-canvas/; gh-pages -d dist"
     },
     "dependencies": {
         "@types/pako": "^1.0.0",
+        "gh-pages": "^2.0.1",
         "pako": "^1.0.8",
         "tiled-canvas": "*"
     },
