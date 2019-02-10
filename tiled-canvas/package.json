@@ -1,6 +1,6 @@
 {
     "name": "tiled-canvas",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "author": "phryneas",
     "license": "MIT",
     "scripts": {
@@ -28,7 +28,7 @@
     "types": "./dist/index.d.ts",
     "source": "./src/index.ts",
     "files": [
-        "./dist/*"
+        "dist/*"
     ],
     "sideEffects": false,
     "dependencies": {
